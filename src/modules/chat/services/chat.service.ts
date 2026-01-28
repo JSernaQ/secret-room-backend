@@ -23,7 +23,8 @@ export class ChatService {
         return {
             roomId,
             type: 'system',
-            message: text,
+            ciphertext: text,
+            iv: 0,
             timestamp: Date.now(),
         }
     }

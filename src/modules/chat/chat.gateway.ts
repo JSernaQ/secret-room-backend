@@ -24,11 +24,11 @@ export class ChatGateway implements OnGatewayDisconnect {
     
     console.log('Client connected:', userId);
   }
-
-
+  
+  
   handleDisconnect(client: Socket) {
     const rooms = this.chatService.getClientRooms(client.id);
-
+    
     rooms.forEach(roomId => {
       this.server.to(roomId).emit(
         EVENTS.MESSAGE, 
@@ -37,9 +37,10 @@ export class ChatGateway implements OnGatewayDisconnect {
           `User ${client.data.alias} disconnected.`,
         )
       );
-
+      
       this.chatService.removeClientToRoom(client.id, roomId)
       client.leave(roomId);
+      console.log('Client disconnected:', client.data.userId);
     });
 
     this.chatService.removeClient(client.id)
@@ -56,7 +57,9 @@ export class ChatGateway implements OnGatewayDisconnect {
     client.join(roomId);
     client.data.alias = payload.alias;
     this.chatService.addClientToRoom(client.id, roomId);
-
+    
+    console.log('Sala creada por:', client.data.alias);
+    
     return {
       event: EVENTS.CREATE_ROOM,
       data: {
@@ -65,15 +68,16 @@ export class ChatGateway implements OnGatewayDisconnect {
       },
     };
   }
-
-
+  
+  
   @SubscribeMessage(EVENTS.MESSAGE)
   handleMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: SendMessageDto
   ) {
     const key = `${client.data.userId}:message`;
-
+    console.log(payload.ciphertext);
+    
     if (!this.chatService.isClientInRoom(client, payload.roomId)) {
       return {
         event: EVENTS.MESSAGE,
@@ -84,7 +88,7 @@ export class ChatGateway implements OnGatewayDisconnect {
         }
       }
     }
-
+    
     if (!this.rateLimit.isAllowed(key)) {
       return {
         event: EVENTS.MESSAGE,
@@ -95,20 +99,20 @@ export class ChatGateway implements OnGatewayDisconnect {
         }
       }
     }
-
+    
     this.server
-      .to(payload.roomId)
-      .emit(EVENTS.MESSAGE, {
-        roomId: payload.roomId,
-        type: 'user',
-        ciphertext: payload.ciphertext,
-        iv: payload.iv,
-        from: client.data.alias,
-        timestamp: Date.now()
-      });
+    .to(payload.roomId)
+    .emit(EVENTS.MESSAGE, {
+      roomId: payload.roomId,
+      type: 'user',
+      ciphertext: payload.ciphertext,
+      iv: payload.iv,
+      from: client.data.alias,
+      timestamp: Date.now()
+    });
   }
-
-
+  
+  
   @SubscribeMessage(EVENTS.JOIN_ROOM)
   handleJoinRoom(
     @ConnectedSocket() client: Socket,
@@ -127,12 +131,12 @@ export class ChatGateway implements OnGatewayDisconnect {
         error: response.message,
       };
     }
-
+    
     client.join(payload.roomId);
     client.data.alias = payload.alias;
-
+    
     this.chatService.addClientToRoom(client.id, payload.roomId)
-
+    
     this.server
       .to(payload.roomId)
       .emit(EVENTS.MESSAGE, 
@@ -163,7 +167,9 @@ export class ChatGateway implements OnGatewayDisconnect {
     this.server
       .to(payload.roomId)
       .emit(EVENTS.MESSAGE, 
-        this.chatService.buildSystemMessage(payload.roomId, `User ${payload.alias} left.`)
+        this.chatService.buildSystemMessage(
+          payload.roomId, 
+          `User ${payload.alias} left.`)
       )
 
     return {
