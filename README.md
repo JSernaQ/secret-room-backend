@@ -1,4 +1,4 @@
-# SECRET ROOM
+# SECRET ROOM 🔐
 ## Encrypted Anonymous Chat – Backend
 
 Backend para una aplicación de **chat anónimo, en tiempo real y con cifrado end‑to‑end (E2E)**.
@@ -8,13 +8,13 @@ El servidor **nunca conoce el contenido de los mensajes**, solo actúa como inte
 
 ## Características principales
 
-* 💬 Chat en tiempo real con **WebSockets (Socket.IO)**
-* 🔐 **Cifrado E2E** usando **AES‑256‑GCM**
-* 🕶️ Anónimo (sin login, sin registro)
-* 🧠 El servidor **no puede descifrar mensajes**
-* 🏠 Salas privadas con `roomId`
-* 🧹 Limpieza automática de salas
-* ⚡ Arquitectura simple y eficiente
+* Chat en tiempo real con **WebSockets (Socket.IO)**
+* **Cifrado E2E** usando **AES‑256‑GCM**
+* Anónimo (sin login, sin registro)
+* El servidor **no puede descifrar mensajes**
+* Salas privadas con `roomId`
+* Limpieza automática de salas
+* Arquitectura simple y eficiente
 
 ---
 
