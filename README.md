@@ -1,98 +1,188 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# SECRET ROOM
+## Encrypted Anonymous Chat – Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend para una aplicación de **chat anónimo, en tiempo real y con cifrado end‑to‑end (E2E)**.
+El servidor **nunca conoce el contenido de los mensajes**, solo actúa como intermediario de transporte.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Características principales
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+* 💬 Chat en tiempo real con **WebSockets (Socket.IO)**
+* 🔐 **Cifrado E2E** usando **AES‑256‑GCM**
+* 🕶️ Anónimo (sin login, sin registro)
+* 🧠 El servidor **no puede descifrar mensajes**
+* 🏠 Salas privadas con `roomId`
+* 🧹 Limpieza automática de salas
+* ⚡ Arquitectura simple y eficiente
 
-## Project setup
+---
 
-```bash
-$ pnpm install
+## 🛠️ Stack tecnológico
+
+| Capa            | Tecnología               |
+| --------------- | ------------------------ |
+| Runtime         | Node.js                  |
+| Framework       | NestJS                   |
+| Realtime        | Socket.IO                |
+| Lenguaje        | TypeScript               |
+| Cifrado         | Web Crypto API (AES‑GCM) |
+| Infraestructura | Docker        |
+
+---
+
+## 🔐 Modelo de seguridad (E2E)
+
+* La clave **se genera en el cliente**
+* El servidor **nunca recibe ni genera claves**
+* Cada mensaje se envía como:
+
+  * `ciphertext`
+  * `iv` (vector de inicialización)
+* Se usa **AES‑256‑GCM**, que provee:
+
+  * Confidencialidad
+  * Integridad
+  * Autenticación del mensaje
+
+📌 Si el `ciphertext`, `iv` o la clave no coinciden, el mensaje **no puede descifrarse**.
+
+---
+
+## 📡 Eventos de Socket
+
+### 🔹 CREATE_ROOM
+
+Crea una nueva sala de chat.
+
+```ts
+{
+  alias: string;
+}
 ```
 
-## Compile and run the project
+Respuesta:
 
-```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+```ts
+{
+  roomId: string;
+  alias: string;
+}
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ pnpm run test
+### 🔹 JOIN_ROOM
 
-# e2e tests
-$ pnpm run test:e2e
+Permite unirse a una sala existente.
 
-# test coverage
-$ pnpm run test:cov
+```ts
+{
+  roomId: string;
+  alias: string;
+}
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### 🔹 MESSAGE
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Envía un mensaje cifrado.
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+```ts
+{
+  roomId: string;
+  type: 'user' | 'system';
+  ciphertext: string;
+  iv: string;
+  timestamp: number;
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+📌 El backend **no interpreta ni valida el contenido** del mensaje.
 
-## Resources
+---
 
-Check out a few resources that may come in handy when working with NestJS:
+### 🔹 LEAVE_ROOM
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Sale de una sala.
 
-## Support
+```ts
+{
+  roomId: string;
+  alias: string;
+}
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## ▶️ Ejecución local
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+pnpm install
+pnpm run start:dev
+```
 
-## License
+El servidor quedará disponible en:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+http://localhost:3000
+```
+
+---
+
+## 📂 Estructura del proyecto
+
+```text
+src/
+ ├── modules
+ |   ├── chat/
+ │       ├── chat.gateway.ts
+ |       └── services
+ │           ├── rate-limit-entry.service.ts
+ |           └── chat.service.ts
+ ├── common/
+ |   ├── constanst
+ |   ├── dto
+ |   └── utils
+ └── main.ts
+```
+
+---
+
+## Limitaciones actuales
+
+* No hay intercambio criptográfico avanzado (ECDH)
+* La clave se deriva de un secreto compartido simple (`roomId`)
+
+> Estas decisiones son **intencionales** para mantener el sistema ligero y educativo.
+
+---
+
+## Próximos pasos (Roadmap)
+
+* 🔑 Intercambio de claves con **ECDH**
+* 🛡️ Protección contra replay attacks
+* 📦 Persistencia opcional cifrada
+
+---
+
+## 👨‍💻 Autor
+
+Proyecto desarrollado por **Juan David Serna Quilindo**.
+
+Enfocado en:
+
+* Backend
+* Seguridad
+* Arquitectura de sistemas
+* Cifrado aplicado
+
+---
+
+## 📜 Licencia
+
+MIT License
+
+---
+
